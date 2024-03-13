@@ -510,6 +510,16 @@ Value Search::Worker::search(
             // We can guarantee to get no more than a draw score during searching for that line
             else
                 beta = std::min(beta, VALUE_DRAW + 1);
+
+            if (alpha >= beta)
+                return alpha;
+
+            // Reduce depth to reduce useless searches
+            depth -= reductions[depth] * reductions[depth];
+
+            // Use qsearch if depth <= 0.
+            if (depth <= 0)
+                return qsearch < PvNode ? PV : NonPV > (pos, ss, alpha, beta);
         }
 
         if (threads.stop.load(std::memory_order_relaxed) || ss->ply >= MAX_PLY)
