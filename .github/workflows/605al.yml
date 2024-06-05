@@ -1,0 +1,175 @@
+
+名称：鼠兔鱼
+
+在：
+  推送：
+    分行：
+      - 主人
+
+职位：
+  皮卡鱼-x86-64：
+    名称： ${{ matrix.config.name }}${{ matrix.arch }}
+    运行： ${{ matrix.config.os }}
+    环境：
+      架构： x86-64${{ matrix.arch }}
+      COMPCXX：叮叮当当++
+      COMP：叮叮当当
+      EXE文件： pikafish${{ matrix.arch }}${{ matrix.config.ext }}
+      SDE： ${{ matrix.config.sde }}
+    策略：
+      矩阵：
+        配置：
+          - 名称：Linux
+            操作系统： Ubuntu-20.04 
+            外壳：bash
+            sde： /home/runner/work/Pikafish/Pikafish/.output/sde-temp-files/sde-external-9.27.0-2023-09-13-lin/sde -未来 --
+          - 名称：Windows
+            操作系统： Windows-latest
+            外壳：MSYS2 {0}
+            分机：.exe
+            sde： /d/a/Pikafish/Pikafish/.output/sde-temp-files/sde-external-9.27.0-2023-09-13-win/sde.exe -future --
+        架构： [“-vnni512”， “-avx512”， “-avx512f”， “-avxvnni”， “-bmi2”， “-avx2”， “-sse41-popcnt”]
+        排除：
+          - 拱门：-avxvnni
+            配置： {操作系统： Ubuntu-20.04}
+    默认值：
+      运行：
+        工作目录：src
+        shell： ${{ matrix.config.shell }}
+
+    步骤：
+      - 用途：动作/checkout@v4
+
+      - name： 安装 LLVM 和 Clang
+        如果： runner.os == 'Linux'
+        运行： |
+sudo apt 更新
+sudo apt install clang llvm
+      - name：设置 msys 并安装所需的软件包
+        如果： runner.os == 'Windows'
+        用途：msys2/setup-msys2@v2
+        与：
+          msystem：clang64
+          安装：mingw-w64-clang-x86_64-clang make git expect
+
+      - name： 下载 SDE 包
+        if： runner.os == 'Linux' || runner.os == 'Windows'
+        用途：petarpetrovt/setup-sde@91a1a03434384e064706634125a15f7446d2aafb # @v2.3
+        与：
+          environmentVariableName：SDE_DIR
+          sde版本：9.27.0
+
+      - name： 编译 ${{ matrix.arch }} build
+        运行： |
+make -j 配置文件构建 EXE=$EXE WINE_PATH=“$SDE”
+使条带 EXE=$EXE
+CP $EXE ../
+      - 名称： 下载wiki
+        运行： |
+git clone https://github.com/official-pikafish/Pikafish.wiki.git ../维基
+光盘 ../维基
+rm -rf .git
+      #工件会自动压缩。
+      #为了避免双重压缩，我们使用解压缩的目录
+      - 用途：actions/upload-artifact@v4
+        与：
+          名称： Pikafish-${{ matrix.config.name }}${{ matrix.arch }}
+          路径： |
+${{ env.EXE }}
+维基
+作者
+CONTRIBUTING.md
+Copying.txt
+README.md
+顶部 CPU Contributors.txt
+  Pikafish-MacOS操作系统：
+    名称：MacOS-apple-silicon
+    运行：macOS-latest
+    环境：
+      ARCH：苹果硅
+      COMPCXX：叮叮当当++
+      COMP：叮叮当当
+      EXE：鼠兔鱼-苹果-硅
+    默认值：
+      运行：
+        工作目录：src
+        外壳：bash
+
+    步骤：
+      - 用途：动作/checkout@v4
+
+      - name： 编译 apple-silicon build
+        运行： |
+make -j profile-build EXE=$EXE
+使条带 EXE=$EXE
+CP $EXE ../
+      - 名称： 下载wiki
+        运行： |
+          git clone https://github.com/official-pikafish/Pikafish.wiki.git ../Wiki
+          cd ../Wiki
+          rm -rf .git
+      # Artifacts automatically get zipped.
+      #为了避免双重压缩，我们使用解压缩的目录
+      - 用途：actions/upload-artifact@v4
+        与：
+          名称：Pikafish-MacOS-apple-silicon
+          路径： |
+${{ env.EXE }}
+维基
+作者
+CONTRIBUTING.md
+Copying.txt
+README.md
+顶部 CPU Contributors.txt
+  皮卡鱼-Android：
+    名称： Android-${{ matrix.arch }}
+    运行：Ubuntu-Latest
+    环境：
+      ARCH的： ${{ matrix.arch }}
+      COMPCXX的：aarch64-linux-android21-clang++
+      组合：ndk
+      EXE：鼠兔鱼-${{ matrix.arch }}
+      LDFLAGS：“-static -Wno-unused-command-line-argument”
+    策略：
+      矩阵：
+        拱形： [“armv8-dotprod”， “armv8”]
+    默认值：
+      运行：
+        工作目录：src
+
+    步骤：
+      - 用途：动作/checkout@v4
+
+      - name：下载所需的 linux 包
+        运行： |
+sudo apt 更新
+sudo apt install qemu-user
+      - name：安装 NDK
+        运行： |
+NDKV=“21.4.7075529”
+ANDROID_ROOT=/usr/local/lib/android
+ANDROID_SDK_ROOT=$ANDROID_ROOT/sdk
+SDKMANAGER=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager
+回声“Y” |$SDKMANAGER “ndk;$NDKV”
+ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/$NDKV
+ANDROID_NDK_BIN=$ANDROID_NDK_ROOT/toolchains/llvm/prebuilt/linux-x86_64/bin
+echo “ANDROID_NDK_BIN=$ANDROID_NDK_BIN” >> $GITHUB_ENV
+      - name： 编译 ${{ matrix.arch }} build
+        运行： |
+export PATH=${{ env.ANDROID_NDK_BIN }}：$PATH
+使 -j 配置文件构建 EXE=$EXE WINE_PATH=$EMU
+使条带 EXE=$EXE
+CP $EXE ../
+      #工件会自动压缩。
+      #为了避免双重压缩，我们使用解压缩的目录
+      - 用途：actions/upload-artifact@v4
+        与：
+          名称： Pikafish-Android-${{ matrix.arch }}
+          路径： |
+${{ env.EXE }}
+作者
+CONTRIBUTING.md
+Copying.txt
+README.md
+顶部 CPU Contributors.txt
+下载 ZIP下载 TAR
